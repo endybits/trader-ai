@@ -5,6 +5,7 @@ __pycache__/
 
 # Custom Files
 config.json
+table_description.py
 
 
 # C extensions

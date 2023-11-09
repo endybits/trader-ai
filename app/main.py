@@ -1,8 +1,14 @@
 
+import json
 import uvicorn
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, Field
 from fastapi import FastAPI
+from pydantic import BaseModel, Field
+
+from fastapi.responses import HTMLResponse
+from fastapi import WebSocket
+
+from utils.html_response import html
+from utils.langchain_labs import text2sql
 
 class UserQuery(BaseModel):
     user_id: str = Field(..., example="123")
@@ -17,8 +23,22 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return HTMLResponse('<h1>FastAPI</h1>')
+    return HTMLResponse(html)
 
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        # data = await websocket.receive_text()
+        data = await websocket.receive_json()
+        user_query = json.loads(data)
+        question: str = user_query.get("question")
+        user_id = user_query.get("user_id")
+        await websocket.send_text(f"{question.capitalize()}")
+        await websocket.send_text(f"loading")
+        sql_command = await text2sql(user_id, question)
+        await websocket.send_text(f"{sql_command}")
 
 
 if __name__ == "__main__":
