@@ -9,6 +9,7 @@ from fastapi import WebSocket
 
 from utils.html_response import html
 from utils.langchain_labs import text2sql
+from app.utils.db_querier import exec_query
 
 class UserQuery(BaseModel):
     user_id: str = Field(..., example="123")
@@ -23,11 +24,13 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
+    '''This function returns the HTML response for the main page'''
     return HTMLResponse(html)
 
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    '''This function handles the websocket connection and the communication between the client and the server'''
     await websocket.accept()
     while True:
         # data = await websocket.receive_text()
@@ -39,6 +42,8 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_text(f"loading")
         sql_command = await text2sql(user_id, question)
         await websocket.send_text(f"{sql_command}")
+        data_res = exec_query(sql_command)
+        await websocket.send_text(f"{data_res}")
 
 
 if __name__ == "__main__":
