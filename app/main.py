@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi import WebSocket
 
 from utils.html_response import html
-from utils.langchain_labs import text2sql
+from utils.langchain_labs import text2sql, data2text
 from app.utils.db_querier import exec_query
 
 class UserQuery(BaseModel):
@@ -44,6 +44,10 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_text(f"{sql_command}")
         data_res = exec_query(sql_command)
         await websocket.send_text(f"{data_res}")
+        await websocket.send_text(f"loading")
+        # Data to text
+        ai_response = await data2text(db_query=sql_command, data=data_res, user_question=question)
+        await websocket.send_text(f"{ai_response}")
 
 
 if __name__ == "__main__":
